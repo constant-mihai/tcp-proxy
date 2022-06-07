@@ -1,0 +1,3 @@
+[submodule "c_exercises"]
+	path = c_exercises
+	url = git@github.com:constant-mihai/c_exercises.git
