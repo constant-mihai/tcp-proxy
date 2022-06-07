@@ -1,13 +1,21 @@
 CC=gcc
 CFLAGS=-I. -lpthread -Wall -Wextra -fno-diagnostics-show-caret -Wcast-align -Werror=return-type -g -O0 -Ddebug #-fPIC
-DEPS = list.h workerpool.h tcp_server.h
-OBJ = list.c workerpool.c tcp_server.o main.o
+DEPS = ../c_exercises/data-structures-and-algorithms/list/list.h \
+	   workerpool.h \
+	   tcp_server.h
+OBJ = workerpool.o tcp_server.o main.o
+
+#LDFLAGS += -Wl,-rpath=../c_exercises/data-structures-and-algorithms/list# this is needed if modules are imported by relative path
+
+LIBS = -L../c_exercises/data-structures-and-algorithms/ -ldsaa
+
+INCS = -I../c_exercises/data-structures-and-algorithms/
 
 %.o: %.c $(DEPS)
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(INCS)
 
 tcp-proxy: $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: shared 
 shared: $(OBJ)
@@ -15,4 +23,3 @@ shared: $(OBJ)
 
 clean:
 	rm -rf *.o
-	rm udp

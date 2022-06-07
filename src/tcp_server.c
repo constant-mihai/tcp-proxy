@@ -7,7 +7,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-#include "list.h"
+#include <list/list.h>
 #include "tcp_server.h"
 
 void *tcp_server_listen(void *arg) {
