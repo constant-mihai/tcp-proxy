@@ -8,4 +8,4 @@
 #include <sys/socket.h>
 #include <errno.h>
 
-void test_connections();
+void test_tcp_server();

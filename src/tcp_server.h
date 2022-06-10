@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include "buffer/buffer.h"
 #include <list/list.h>
 
@@ -18,19 +19,15 @@
         } \
     } while(0)
 
-typedef struct connection_queue {
-    list_t *q;
+typedef struct tcp_server {
     int *epoll_fds;
     buffer_t *listen_fds;
     buffer_t *conn_fds;
-    pthread_mutex_t mutex;
-    pthread_cond_t cv;
-}connection_queue_t;
+} tcp_server_t;
 
-void *tcp_server_listen(void *arg);
+void epoll_ctl_add(int epfd, int fd, uint32_t events);
 
-connection_queue_t *connection_create();
-void connection_enqueue(connection_queue_t *q, buffer_t *buff);
-buffer_t *connection_pop(connection_queue_t *q);
-void connection_process(connection_queue_t *queue);
-void connection_destroy(connection_queue_t **connq);
+void tcp_server_listen(tcp_server_t *server);
+
+tcp_server_t *tcp_server_create();
+void tcp_server_destroy(tcp_server_t **connq);
