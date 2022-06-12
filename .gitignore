@@ -58,3 +58,7 @@ dkms.conf
 
 # tags
 tags
+
+# bin
+bin/
+src/tcp-proxy

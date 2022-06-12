@@ -27,7 +27,12 @@ typedef struct tcp_server {
 
 void epoll_ctl_add(int epfd, int fd, uint32_t events);
 
-void tcp_server_listen(tcp_server_t *server);
+void tcp_server_receive(int connfd);
+
+void *tcp_server_handle_connection(void *arg);
 
 tcp_server_t *tcp_server_create();
+
+void tcp_server_listen(tcp_server_t *server);
+
 void tcp_server_destroy(tcp_server_t **connq);
