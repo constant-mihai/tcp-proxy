@@ -11,6 +11,8 @@
 #define MAX_CONNECTION_SOCKETS 65535
 #define WAIT_TIME_NANOSECONDS 1000
 
+const char* appname_g;
+
 #define CLOSE(fd) \
     do { \
         if (close(fd) == -1) { \

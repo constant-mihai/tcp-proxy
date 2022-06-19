@@ -9,16 +9,23 @@
 #include <fcntl.h>
 #include <sys/time.h>
 
+#include <log/log.h>
 #include <buffer/buffer.h>
 #include <utils/utils.h>
 #include "tcp_server.h"
+#include "workerpool.h"
+
+static __thread int log_module_idx_s;
 
 void epoll_ctl_add(int epfd, int fd, uint32_t events) {
 	struct epoll_event ev;
 	ev.events = events;
 	ev.data.fd = fd;
 	if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        fprintf(stderr, "error on activating epoll_fd: %s\n", strerror(errno));
+        const char* strerr = strerror(errno);
+        MR_LOG_ERR_AT(log_module_idx_s, "error on activating epoll_fd");
+        mr_log_error(strerr);
+        MR_LOG_END();
 		exit(1);
 	}
 }
@@ -27,7 +34,6 @@ void tcp_server_receive(int connfd) {
     buffer_t *buf = buffer_create(1500); // TODO, what's a good buffer size?
     ssize_t nrecv = 0;
 
-    // TODO, needs a stop condition
     for ( ; ; ) {
         nrecv = recv(connfd, buf->val, sizeof(buf), 0);
         if (nrecv == -1) {
@@ -36,15 +42,21 @@ void tcp_server_receive(int connfd) {
             } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 break;
             } else {
-                printf("error on recv() %s\n", strerror(errno));
+                const char* strerr = strerror(errno);
+                MR_LOG_ERR_AT(log_module_idx_s, "error on recv()");
+                mr_log_error(strerr);
+                MR_LOG_END();
                 exit(1);
             }
         } else if (nrecv == 0) {
-            printf("received EOF\n");
+            MR_LOG_INFO_AT(log_module_idx_s, "received EOF");
+            MR_LOG_END();
             break;
         }
         buf->len = nrecv;
-        printf("received buf : %.*s\n", (int)buf->len, (char*)buf->val);
+        MR_LOG_INFO_AT(log_module_idx_s, "received buf");
+        mr_log_buffer("buffer-value", (int)buf->len, (char*)buf->val);
+        MR_LOG_END();
     }
 }
 
@@ -58,7 +70,16 @@ void *tcp_server_handle_connection(void *arg) {
     socklen_t           clilen;
     struct epoll_event events[MAX_EVENTS];
 
-    tcp_server_t *server = (tcp_server_t*) arg;
+    worker_arg_t *worker_arg = (worker_arg_t*) arg;
+    tcp_server_t *server = (tcp_server_t*) worker_arg->caller_arg;
+
+    log_create(appname_g, worker_arg->name);
+    log_config_t log_config = {
+        .log_to_console = 1,
+        .level = L_INFO,
+        .filename = NULL 
+    };
+    log_module_idx_s = log_add_module("default", log_config);
 
     for ( ; ; ) {
 		event_count = epoll_wait(*server->epoll_fds,
@@ -69,7 +90,10 @@ void *tcp_server_handle_connection(void *arg) {
         if (event_count == -1) {
             if (errno == EINTR) continue;
             else {
-                fprintf(stderr, "error on epoll wait %s\n", strerror(errno));
+                const char* strerr = strerror(errno);
+                MR_LOG_ERR_AT(log_module_idx_s, "error on epoll wait");
+                mr_log_error(strerr);
+                MR_LOG_END();
                 exit(1);
             }
         }
@@ -107,7 +131,7 @@ void *tcp_server_handle_connection(void *arg) {
                         continue;
                     }
                     else {
-                        fprintf(stderr, "accept error\n");
+                        MR_LOG_ERR_AT(log_module_idx_s, "accept error\n");
                         exit(1);
                     }
                 }
@@ -115,7 +139,10 @@ void *tcp_server_handle_connection(void *arg) {
                 if (fcntl(connfd,
                           F_SETFD,
                           fcntl(connfd, F_GETFD, 0) | O_NONBLOCK) == -1) {
-                    fprintf(stderr, "error setting fd options %s", strerror(errno));
+                    const char* strerr = strerror(errno);
+                    MR_LOG_ERR_AT(log_module_idx_s, "error setting fd options");
+                    mr_log_error(strerr);
+                    MR_LOG_END();
                     exit(1);
                 }
                 buffer_append_mem(server->conn_fds, (void*)&connfd, sizeof(int));
@@ -131,7 +158,8 @@ void *tcp_server_handle_connection(void *arg) {
                 CLOSE(events[i].data.fd);
                 continue;
             } else {
-                fprintf(stderr, "unexpected event\n");
+                MR_LOG_ERR_AT(log_module_idx_s, "unexpected event\n");
+                MR_LOG_END();
             }
         }
     }
@@ -152,10 +180,14 @@ void tcp_server_listen(tcp_server_t *server) {
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port        = htons(12345);
 
-    printf("starting tcp_server_listen\n");
+    MR_LOG_INFO_AT(log_module_idx_s, "starting tcp_server_listen");
+    MR_LOG_END();
 
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        fprintf(stderr, "socket error %s\n", strerror(errno));
+        const char* strerr = strerror(errno);
+        MR_LOG_ERR_AT(log_module_idx_s, "socket error");
+        mr_log_error(strerr);
+        MR_LOG_END();
         exit(1);
     }
     buffer_append_mem(server->listen_fds, (void*)&listenfd, sizeof(int));
@@ -163,7 +195,10 @@ void tcp_server_listen(tcp_server_t *server) {
     if (bind(listenfd,
              (struct sockaddr *) &servaddr,
              sizeof(servaddr)) < 0) {
-        fprintf(stderr, "bind error %s\n", strerror(errno));
+        const char* strerr = strerror(errno);
+        MR_LOG_ERR_AT(log_module_idx_s, "bind error");
+        mr_log_error(strerr);
+        MR_LOG_END();
         exit(1);
     }
 
@@ -179,12 +214,18 @@ void tcp_server_listen(tcp_server_t *server) {
 	if (fcntl(listenfd,
               F_SETFD,
               fcntl(listenfd, F_GETFD, 0) | O_NONBLOCK) == -1) {
-        fprintf(stderr, "error setting fd options %s", strerror(errno));
+        const char* strerr = strerror(errno);
+        MR_LOG_ERR_AT(log_module_idx_s, "error setting fd options");
+        mr_log_error(strerr);
+        MR_LOG_END();
 		exit(1);
 	}
 
     if (listen(listenfd, 1024 /* listen server size */ ) < 0) {
-        fprintf(stderr, "listen error %s\n", strerror(errno));
+        const char* strerr = strerror(errno);
+        MR_LOG_ERR_AT(log_module_idx_s, "listen error");
+        mr_log_error(strerr);
+        MR_LOG_END();
         exit(1);
     }
 
@@ -202,7 +243,10 @@ tcp_server_t *tcp_server_create() {
         int *efd = server->epoll_fds + i;
         *efd = epoll_create(1);
         if (*efd == -1) {
-            fprintf(stderr, "error creating epoll fd : %s\n", strerror(errno));
+            const char* strerr = strerror(errno);
+            MR_LOG_ERR_AT(log_module_idx_s, "error creating epoll fd :");
+            mr_log_error(strerr);
+            MR_LOG_END();
             exit(1);
         }
     }
@@ -225,9 +269,10 @@ void tcp_server_destroy(tcp_server_t **server) {
                           EPOLL_CTL_DEL,
                           *(int*)it,
                           NULL) == -1) {
-                fprintf(stderr,
-                        "error removing epoll_fd from monitoring list: %s\n",
-                        strerror(errno));
+                const char* strerr = strerror(errno);
+                MR_LOG_ERR_AT(log_module_idx_s, "error removing epoll_fd from monitoring list:");
+                mr_log_error(strerr);
+                MR_LOG_END();
                 exit(1);
             }
 
@@ -236,13 +281,19 @@ void tcp_server_destroy(tcp_server_t **server) {
         //TODO do I close these here or in handle_connection?
         //ret = close(events[i].data.fd);
         //if (ret == -1) {
-        //    fprintf(stderr, "error closing epoll fd: %s\n", strerror(errno));
+        //    const char* strerr = strerror(errno);
+        //    MR_LOG_ERR_AT(log_module_idx_s, "error closing epoll fd:");
+        //    mr_log_error(strerr);
+        //    MR_LOG_END();
         //    exit(1);
         //}
 
         ret = close(*(int*)vserver->epoll_fds);
         if (ret == -1) {
-            fprintf(stderr, "error closing epoll fd: %s\n", strerror(errno));
+            const char* strerr = strerror(errno);
+            MR_LOG_ERR_AT(log_module_idx_s, "error closing epoll fd:");
+            mr_log_error(strerr);
+            MR_LOG_END();
             exit(1);
         }
     }
