@@ -14,18 +14,22 @@
 #include "workerpool.h"
 #include "list/list.h"
 #include "tcp_server.h"
+
+//Tests
 #include "tcp_server_test.h"
+#include "tun_test.h"
 
 int main(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
-    //TODO this is a place holder for unit-tests
-    test_tcp_server();
-
     appname_g = argv[0];
     log_create(appname_g, "main");
     LOG_ADD_MODULE("default", 1, L_INFO, NULL);
+
+    //TODO this is a place holder for unit-tests
+    test_tcp_server();
+    test_tun();
 
     MR_LOG_INFO("running main");
     MR_LOG_END();
