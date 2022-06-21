@@ -14,6 +14,7 @@
 #include "workerpool.h"
 #include "list/list.h"
 #include "tcp_server.h"
+#include "route.h"
 
 //Tests
 #include "tcp_server_test.h"
@@ -30,6 +31,8 @@ int main(int argc, char **argv) {
     //TODO this is a place holder for unit-tests
     test_tcp_server();
     test_tun();
+
+    route_get();
 
     MR_LOG_INFO("running main");
     MR_LOG_END();
