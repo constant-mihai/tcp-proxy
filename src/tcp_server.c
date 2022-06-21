@@ -18,16 +18,16 @@
 static __thread int log_module_idx_s;
 
 void epoll_ctl_add(int epfd, int fd, uint32_t events) {
-	struct epoll_event ev;
-	ev.events = events;
-	ev.data.fd = fd;
-	if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+    struct epoll_event ev;
+    ev.events = events;
+    ev.data.fd = fd;
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
         const char* strerr = strerror(errno);
         MR_LOG_ERR_AT(log_module_idx_s, "error on activating epoll_fd");
         mr_log_error(strerr);
         MR_LOG_END();
-		exit(1);
-	}
+        exit(1);
+    }
 }
 
 void tcp_server_receive(int connfd) {
@@ -82,7 +82,7 @@ void *tcp_server_handle_connection(void *arg) {
     log_module_idx_s = log_add_module("default", log_config);
 
     for ( ; ; ) {
-		event_count = epoll_wait(*server->epoll_fds,
+        event_count = epoll_wait(*server->epoll_fds,
                                  events,
                                  MAX_EVENTS,
                                  EPOLL_TIMEOUT);
@@ -102,16 +102,16 @@ void *tcp_server_handle_connection(void *arg) {
             // epoll wait timed out
             continue;
         }
-        
+
         listenfd = *(int*)server->listen_fds->val;
         for (int i = 0; i < event_count; i++) {
-			if (events[i].data.fd == listenfd) {
+            if (events[i].data.fd == listenfd) {
                 //The  addrlen  argument is a value-result argument: the caller
-                //must initialize it to contain the  size	(in  bytes)  of  the
+                //must initialize it to contain the  size   (in  bytes)  of  the
                 //structure  pointed  to by addr; on return it will contain the
                 //actual size of the peer address.
                 //
-                //The returned address is truncated if the buffer	provided  is
+                //The returned address is truncated if the buffer   provided  is
                 //too  small; in this case, addrlen will return a value greater
                 //than was supplied to the call.
                 clilen = sizeof(cliaddr);
@@ -121,7 +121,7 @@ void *tcp_server_handle_connection(void *arg) {
                     if (errno == EINTR) {
                         continue;
                     }
-                    //The socket is marked nonblocking	and  no  connections
+                    //The socket is marked nonblocking  and  no  connections
                     //are   present   to   be  accepted.   POSIX.1-2001  and
                     //POSIX.1-2008 allow either error  to  be  returned  for
                     //this  case, and do not require these constants to have
@@ -208,18 +208,18 @@ void tcp_server_listen(tcp_server_t *server) {
     // cal address with bind(2), and is listening for connections after a listen(2).
     // ...
     // If  no pending connections are present on the queue, and the socket is not marked as
-    // nonblocking, accept() blocks the caller until  a  connection  is  present.   If	the
+    // nonblocking, accept() blocks the caller until  a  connection  is  present.   If  the
     // socket  is  marked  nonblocking and no pending connections are present on the queue,
     // accept() fails with the error EAGAIN or EWOULDBLOCK.
-	if (fcntl(listenfd,
+    if (fcntl(listenfd,
               F_SETFD,
               fcntl(listenfd, F_GETFD, 0) | O_NONBLOCK) == -1) {
         const char* strerr = strerror(errno);
         MR_LOG_ERR_AT(log_module_idx_s, "error setting fd options");
         mr_log_error(strerr);
         MR_LOG_END();
-		exit(1);
-	}
+        exit(1);
+    }
 
     if (listen(listenfd, 1024 /* listen server size */ ) < 0) {
         const char* strerr = strerror(errno);
