@@ -51,6 +51,10 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# coverage files
+*.gcno
+*.gcda
+
 # vim
 *.swp
 *.swo
@@ -62,3 +66,6 @@ tags
 # bin
 bin/
 src/tcp-proxy
+
+# log
+*.log
