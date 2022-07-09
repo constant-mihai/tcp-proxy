@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I. -lpthread -Wall -Wextra -fno-diagnostics-show-caret -Wcast-align -Werror=return-type -g -O0 -Ddebug #-fPIC
+CFLAGS=-I. -lpthread -Wall -Wextra -fno-diagnostics-show-caret -Wcast-align -Werror=return-type -g -O0 -Ddebug
 DEPS = ../c_exercises/data-structures-and-algorithms/list/list.h \
 	   workerpool.h \
 	   tcp_server.h \
