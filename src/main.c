@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 
     appname_g = argv[0];
     log_create(appname_g, "main");
-    LOG_ADD_MODULE("default", 1, L_INFO, NULL);
+    LOG_ADD_MODULE("default", 1, LOG_LEVEL_INFO, NULL);
 
     //TODO this is a place holder for unit-tests
     test_tcp_server();

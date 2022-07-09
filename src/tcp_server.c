@@ -76,7 +76,7 @@ void *tcp_server_handle_connection(void *arg) {
     log_create(appname_g, worker_arg->name);
     log_config_t log_config = {
         .log_to_console = 1,
-        .level = L_INFO,
+        .level = LOG_LEVEL_INFO,
         .filename = NULL 
     };
     log_module_idx_s = log_add_module("default", log_config);
